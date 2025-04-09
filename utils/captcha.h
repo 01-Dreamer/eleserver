@@ -1,5 +1,5 @@
-#ifndef GENERATE_CAPTCHA
-#define GENERATE_CAPTCHA
+#ifndef CAPTCHA_H
+#define CAPTCHA_H
 
 #include <Magick++.h>
 #include <iostream>
@@ -8,7 +8,7 @@
 #include <cstring>
 #include "base64.h"
 
-namespace GENERATE_CAPTCHA
+namespace CAPTCHA
 {
     // 生成验证码
     bool generateCaptchaText(int len, std::string &captchaText)
@@ -75,10 +75,9 @@ namespace GENERATE_CAPTCHA
     }
 
     // 生成验证码图片
-    bool generate_captcha(int len, std::string& outputImage)
+    bool generate_captcha(int len, std::string& outputImage, std::string& outputValue)
     {
-        std::string captchaText;
-        generateCaptchaText(len, captchaText);
+        generateCaptchaText(len, outputValue);
 
         // 图像大小
         int width = 300;
@@ -100,7 +99,7 @@ namespace GENERATE_CAPTCHA
         int yOffset = height / 1.5;
         std::srand(std::time(0));
 
-        for (char c : captchaText)
+        for (char c : outputValue)
         {
             std::string singleChar(1, c);
 
@@ -135,10 +134,16 @@ namespace GENERATE_CAPTCHA
 
         std::string imageStr(imageData.begin(), imageData.end());
         BASE64::encode(&imageStr, outputImage);
+
+        // 转小写字母
+        for(char& c:outputValue)
+           if('A' <= c && c <= 'Z')
+              c += 32;
+        
         return true;
     }
 
-} // namespace GENERATE_CAPTCHA
+} // namespace CAPTCHA
 
 
-#endif // GENERATE_CAPTCHA
+#endif // CAPTCHA_H

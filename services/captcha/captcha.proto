@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package CAPTCHA_RPC;
+
 service Captcha {
   rpc GetCaptcha (Empty) returns (CaptchaJson);
   rpc VerifyCaptcha (CaptchaJson) returns (Status);

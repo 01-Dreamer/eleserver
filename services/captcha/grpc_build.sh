@@ -1,15 +1,14 @@
 #!/bin/bash
 
-
 ACTION=$1
 
-PROTO_FILE=service
+PROTO_FILE=captcha
 
 
 if [ "$ACTION" == "clean" ]; then
-  echo "Cleaning generated files..."
+  echo "Cleaning gRPC files..."
   rm -rf ${PROTO_FILE}.grpc.* ${PROTO_FILE}.pb.*
 else
-  echo "Generating gRPC and proto files..."
+  echo "Generating gRPC files..."
   protoc --cpp_out=. --grpc_out=. --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) $PROTO_FILE.proto
 fi
