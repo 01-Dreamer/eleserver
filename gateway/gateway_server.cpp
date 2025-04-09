@@ -2,6 +2,10 @@
 #include <httplib.h>
 #include <spdlog/spdlog.h>
 
+#include "../utils/generate_captcha.h"
+
+
+
 const uint16_t gateway_server_port = 8080;
 
 
@@ -9,7 +13,7 @@ int main(int argc, char* argv[])
 {
     spdlog::set_pattern("%^[%H:%M:%S gateway] [%L] %v%$");
     spdlog::set_level(spdlog::level::info);
-    
+
 
     httplib::Server gate_server;
 
@@ -21,12 +25,16 @@ int main(int argc, char* argv[])
     // 响应验证码
     gate_server.Get("/captcha", [](const httplib::Request& request, httplib::Response& response)
     {
-        const char* json_response = R"({
-            "captchaBase64": "",
-            "captchaId": "123456"
-        })";
 
-        response.set_content(json_response, "application/json");
+        std::string data;
+        GENERATE_CAPTCHA::generate_captcha(6, data);
+
+        std::string json_response = "{\"captchaBase64\": \"";
+        json_response+=data;
+        json_response+="\",\"captchaId\": \"123456\"}";
+
+
+        response.set_content(json_response.c_str(), "application/json");
     });
 
 

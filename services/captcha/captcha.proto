@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+service Captcha {
+  rpc GetCaptcha (Empty) returns (CaptchaJson);
+  rpc VerifyCaptcha (CaptchaJson) returns (Status);
+}
+
+message Empty {}
+
+message CaptchaJson {
+    string captcha_json = 1;
+}
+
+message Status {
+    bool status = 1;
+}
