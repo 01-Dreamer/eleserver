@@ -2,15 +2,17 @@
 #define CAPTCHA_H
 
 #include <Magick++.h>
+#include <curl/curl.h>
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <random>
 #include <cstring>
 #include "base64.h"
 
-namespace CAPTCHA
-{
-    // 生成验证码
+
+namespace CAPTCHA {
+    // 生成验证码文本
     bool generateCaptchaText(int len, std::string &captchaText)
     {
         static std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -75,7 +77,7 @@ namespace CAPTCHA
     }
 
     // 生成验证码图片
-    bool generate_captcha(int len, std::string& outputImage, std::string& outputValue)
+    bool generate_captcha_image(int len, std::string &outputBase64, std::string &outputValue)
     {
         generateCaptchaText(len, outputValue);
 
@@ -127,23 +129,112 @@ namespace CAPTCHA
         addNoise(image);
 
         Magick::Blob blob;
-        image.write(&blob, "PNG");// .png格式
+        image.write(&blob, "PNG"); // .png格式
 
         std::vector<unsigned char> imageData(blob.length());
         std::memcpy(imageData.data(), blob.data(), blob.length());
 
         std::string imageStr(imageData.begin(), imageData.end());
-        BASE64::encode(&imageStr, outputImage);
+        BASE64::encode(&imageStr, outputBase64);
 
-        // 转小写字母
-        for(char& c:outputValue)
-           if('A' <= c && c <= 'Z')
-              c += 32;
-        
+        // 大写字母转小写字母
+        for (char &c : outputValue)
+            if ('A' <= c && c <= 'Z')
+                c += 32;
+
         return true;
     }
 
-} // namespace CAPTCHA
+    // 生成纯数字验证码
+    std::string generate_verification_code(int len)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(0, 9);
 
+        std::stringstream ss;
+        for (int i = 0; i < len; ++i)
+        {
+            ss << dis(gen);
+        }
+        return ss.str();
+    }
+
+    // libcurl回调函数
+    static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
+    {
+        std::string *data = (std::string *)userp;
+        if (size * nmemb < 1 || data->empty())
+            return 0;
+
+        size_t len = data->copy((char *)ptr, size * nmemb);
+        *data = data->substr(len);
+        return len;
+    }
+
+    // 发送邮箱验证码
+    bool send_email(const std::string *to, std::string &verification_code)
+    {
+        verification_code = generate_verification_code(6);
+
+        CURL *curl;
+        CURLcode res = CURLE_OK;
+
+        const std::string from = std::getenv("MY_QQ_EMAIL");
+        const std::string smtp_server = "smtp.qq.com";
+        const int smtp_port = 465;
+        const std::string auth_code = std::getenv("QQ_EMAIL_AUTH");
+
+        const std::string subject = "软件工程实训饿了么验证码";
+        const std::string body = "您的验证码是: " + verification_code + "\n验证码有效时间为120秒";
+        std::string email_data =
+            "From: " + from + "\r\n"
+                              "To: " +
+            *to + "\r\n"
+                 "Subject: " +
+            subject + "\r\n"
+                      "MIME-Version: 1.0\r\n"
+                      "Content-Type: text/plain; charset=utf-8\r\n"
+                      "\r\n" +
+            body + "\r\n";
+
+        curl = curl_easy_init();
+        if (curl)
+        {
+            std::string url = "smtps://" + smtp_server + ":" + std::to_string(smtp_port);
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+            curl_easy_setopt(curl, CURLOPT_USERNAME, from.c_str());
+            curl_easy_setopt(curl, CURLOPT_PASSWORD, auth_code.c_str());
+            curl_easy_setopt(curl, CURLOPT_LOGIN_OPTIONS, "AUTH=LOGIN");
+            curl_easy_setopt(curl, CURLOPT_MAIL_FROM, from.c_str());
+            struct curl_slist *recipients = NULL;
+            recipients = curl_slist_append(recipients, (*to).c_str());
+            curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
+            curl_easy_setopt(curl, CURLOPT_READFUNCTION, payload_source);
+            curl_easy_setopt(curl, CURLOPT_READDATA, &email_data);
+            curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+            curl_easy_setopt(curl, CURLOPT_USE_SSL, CURLUSESSL_ALL);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+
+
+            res = curl_easy_perform(curl);
+
+            curl_slist_free_all(recipients);
+            curl_easy_cleanup(curl);
+
+            if (res != CURLE_OK)
+            {
+                std::cerr << "failed to send email:" << curl_easy_strerror(res) << std::endl;
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+
+} // namespace CAPTCHA
 
 #endif // CAPTCHA_H

@@ -2,7 +2,7 @@
 
 ACTION=$1
 
-PROTO_FILE=captcha
+PROTO_FILE=auth
 
 
 if [ "$ACTION" == "clean" ]; then
