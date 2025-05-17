@@ -30,7 +30,6 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
         System.out.println(request.toString());
 
-
         Map<String, String> res = new HashMap<>();
 
         String email = request.getEmail();
@@ -38,12 +37,14 @@ public class AuthController {
         String captchaImgId = request.getCaptchaImgId();
         String captchaImgText = request.getCaptchaImgText();
 
+        // 验证图形验证码
         String captchaImgTextInRedis = redisUtil.get(captchaImgId + "@img", RedisUtil.CAPTCHA_REDIS);
-        if(captchaImgTextInRedis == null || !captchaImgTextInRedis.equals(captchaImgText)) {
-            res.put("error", "error image captcha text");
+        if(captchaImgTextInRedis == null || !captchaImgTextInRedis.equalsIgnoreCase(captchaImgText)) {
+            res.put("error_", "error image captcha text");
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
 
+        // 验证邮箱和密码
         QueryWrapper<User> wrapper = new QueryWrapper<>();
         wrapper.eq("email", email);
         User user = userService.getOne(wrapper);
@@ -54,6 +55,7 @@ public class AuthController {
 
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
+
 
 
 
