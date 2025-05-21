@@ -1,6 +1,9 @@
 package com.zxylearn.eleserver.controller;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.service.UserService;
 import com.zxylearn.eleserver.utils.CaptchaUtil;
 import com.zxylearn.eleserver.utils.EmailUtil;
 import com.zxylearn.eleserver.utils.RedisUtil;
@@ -28,6 +31,8 @@ public class CaptchaController {
     RedisUtil redisUtil;
     @Autowired
     EmailUtil emailUtil;
+    @Autowired
+    UserService userService;
 
 
     @GetMapping("/captchaImg")
@@ -43,7 +48,7 @@ public class CaptchaController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.IMAGE_PNG);
         headers.add("imgCaptchaId", imgCaptchaId);
-        redisUtil.set(imgCaptchaId + "@img", imgCaptchaText, 180, RedisUtil.CAPTCHA_REDIS);
+        redisUtil.set(imgCaptchaId + "@img", imgCaptchaText, 300, RedisUtil.CAPTCHA_REDIS);
 
         return ResponseEntity.ok().headers(headers).body(imageBytes);
     }
@@ -53,22 +58,30 @@ public class CaptchaController {
     public ResponseEntity<Map<String, String>> getCaptchaEmail(@RequestParam String email) {
         Map<String, String> res = new HashMap<>();
 
+        // 判断之前短时间内是否请求过验证码
         long wait = redisUtil.ttl(email, RedisUtil.CAPTCHA_REDIS);
         if (wait > 0) {
             res.put("wait", String.valueOf(wait));
             return new ResponseEntity<>(res, HttpStatus.TOO_MANY_REQUESTS);
         }
 
+        //验证邮箱是否被注册
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        wrapper.eq("email", email);
+        if (userService.getOne(wrapper) != null) {
+            res.put("error", "email is already registered");
+            return new ResponseEntity<>(res, HttpStatus.CONFLICT);
+        }
 
+        // 发送邮箱验证码，同时检测邮箱是否存在
         String emailCaptchaText = CaptchaUtil.generateRandomCaptchaText(CaptchaUtil.EMAIL_CAPTCHA_CHAR);
         String emailCaptchaId = UUID.randomUUID().toString();
-        if (!emailUtil.send(email, "软工实训饿了么验证码", emailCaptchaText + ",验证码请勿泄露,有效时间为180秒。")) {
+        if (!emailUtil.send(email, "软工实训饿了么验证码", emailCaptchaText + ",验证码请勿泄露,有效时间为300秒。")) {
             res.put("error", "failed to send");
             return new ResponseEntity<>(res, HttpStatus.BAD_REQUEST);
         }
         res.put("emailCaptchaId", emailCaptchaId);
-        redisUtil.set(email, emailCaptchaId + "@" + emailCaptchaText, 180, RedisUtil.CAPTCHA_REDIS);
-
+        redisUtil.set(email, emailCaptchaId + "@" + emailCaptchaText, 300, RedisUtil.CAPTCHA_REDIS);
 
         return new ResponseEntity<>(res, HttpStatus.OK);
     }

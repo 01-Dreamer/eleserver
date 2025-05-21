@@ -5,6 +5,6 @@ import com.zxylearn.eleserver.pojo.User;
 
 public interface UserService extends IService<User> {
 
-    public boolean addUser(User user);
+    boolean addUser(User user);
 
 }
