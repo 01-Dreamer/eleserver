@@ -7,6 +7,7 @@ import com.zxylearn.eleserver.pojo.RegisterRequest;
 import com.zxylearn.eleserver.pojo.User;
 import com.zxylearn.eleserver.service.UserService;
 import com.zxylearn.eleserver.utils.JwtUtil;
+import com.zxylearn.eleserver.utils.PasswordUtil;
 import com.zxylearn.eleserver.utils.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,7 +82,7 @@ public class AuthController {
         QueryWrapper<User> wrapper = new QueryWrapper<>();
         wrapper.eq("email", email);
         User user = userService.getOne(wrapper);
-        if (user == null || !user.getPassword().equals(password)) {
+        if (user == null || !PasswordUtil.matches(password, user.getPassword())) {
             res.put("errorEmailOrPasswd", "error email or password");
             return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
         }
@@ -128,7 +129,7 @@ public class AuthController {
         //添加用户
         User user = new User();
         user.setEmail(email);
-        user.setPassword(password);
+        user.setPassword(PasswordUtil.encode(password));
         if(userService.addUser(user)) {
             res.put("success", "success to register");
             return new ResponseEntity<>(HttpStatus.OK);
@@ -167,8 +168,7 @@ public class AuthController {
     }
 
 
-
-
+    // 判断密码是否合法
     private static final String regex = "^[A-Za-z0-9]{1,20}$";
     public static boolean isValidPassword(String password) {
         Pattern pattern = Pattern.compile(regex);
