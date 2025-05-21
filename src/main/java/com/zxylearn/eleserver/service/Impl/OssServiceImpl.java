@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.UUID;
+import java.net.URI;
 
 @Slf4j
 @Service
@@ -20,7 +22,7 @@ public class OssServiceImpl implements OssService {
     private OssConfig ossConfig;
 
     @Override
-    public String uploadImage(MultipartFile file) {
+    public String uploadFile(MultipartFile file) {
         try {
             OSS ossClient = new OSSClientBuilder().build(
                     ossConfig.getEndpoint(),
@@ -40,8 +42,40 @@ public class OssServiceImpl implements OssService {
                     ossConfig.getEndpoint() + "/" + fileName;
 
         } catch (Exception e) {
-            log.warn("failed to upload: {}", e.getMessage());
+            log.warn("failed to upload image: {}", e.getMessage());
             return null;
+        }
+    }
+
+    @Override
+    public boolean deleteFile(String fileUrl) {
+        try {
+            URI uri = new URI(fileUrl);
+            String host = uri.getHost();
+            String filePath = uri.getPath().replaceFirst("^/", "");
+
+            if (!host.equals(ossConfig.getBucketName() + "." + ossConfig.getEndpoint())) {
+                log.warn("invalid bucket or endpoint in the url: {}", fileUrl);
+                return false;
+            }
+
+            OSS ossClient = new OSSClientBuilder().build(
+                    ossConfig.getEndpoint(),
+                    ossConfig.getAccessKeyId(),
+                    ossConfig.getAccessKeySecret()
+            );
+
+            ossClient.deleteObject(ossConfig.getBucketName(), filePath);
+            ossClient.shutdown();
+
+            return true;
+
+        } catch (URISyntaxException e) {
+            log.warn("invalid url format: {}", fileUrl);
+            return false;
+        } catch (Exception e) {
+            log.warn("failed to delete file: {}", e.getMessage());
+            return false;
         }
     }
 
