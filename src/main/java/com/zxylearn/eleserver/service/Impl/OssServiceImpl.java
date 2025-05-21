@@ -11,6 +11,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.net.URI;
 
@@ -20,6 +22,9 @@ public class OssServiceImpl implements OssService {
 
     @Autowired
     private OssConfig ossConfig;
+
+    private static final List<String> validExtensions = Arrays.asList("png", "jpg", "jpeg");
+
 
     @Override
     public String uploadFile(MultipartFile file) {
@@ -32,17 +37,22 @@ public class OssServiceImpl implements OssService {
 
             InputStream inputStream = file.getInputStream();
             String originalFilename = file.getOriginalFilename();
+            if(originalFilename == null) {
+                return null;
+            }
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String fileName = "ele/" + UUID.randomUUID() + extension;
+            if(!validExtensions.contains(extension)) {
+                return null;
+            }
 
+            String fileName = "ele/" + UUID.randomUUID() + extension;
             ossClient.putObject(ossConfig.getBucketName(), fileName, inputStream);
             ossClient.shutdown();
-
             return "https://" + ossConfig.getBucketName() + "." +
                     ossConfig.getEndpoint() + "/" + fileName;
 
         } catch (Exception e) {
-            log.warn("failed to upload image: {}", e.getMessage());
+            log.warn("failed to upload file: {}", e.getMessage());
             return null;
         }
     }
@@ -67,7 +77,6 @@ public class OssServiceImpl implements OssService {
 
             ossClient.deleteObject(ossConfig.getBucketName(), filePath);
             ossClient.shutdown();
-
             return true;
 
         } catch (URISyntaxException e) {
