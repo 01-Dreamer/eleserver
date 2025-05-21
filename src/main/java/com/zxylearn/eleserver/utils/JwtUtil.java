@@ -23,7 +23,7 @@ public class JwtUtil {
             SignatureAlgorithm.HS256.getJcaName()
     );
 
-    private static final long REFRESH_EXPIRATION = 60 * 60 * 1000;
+    private static final long REFRESH_EXPIRATION = 7 * 24 * 60 * 60 * 1000;
     private static final long ACCESS_EXPIRATION = 5 * 60 * 1000;
     public static final String REFRESH = "refresh";
     public static final String ACCESS = "access";
@@ -79,6 +79,28 @@ public class JwtUtil {
                 .getBody()
                 .get("email", String.class);
     }
+
+    public static String getType(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("type", String.class);
+    }
+
+    public static long getTokenExpirationTime(String token) {
+        Date expiration = Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+
+        long currentTimeMillis = System.currentTimeMillis();
+        return (expiration.getTime() - currentTimeMillis) / 1000;
+    }
+
 
     public static boolean verifyToken(String token) {
         try {
