@@ -13,10 +13,11 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class AmapServiceImpl implements AmapService {
 
-    @Value("${amap.KeySecret}")
-    private String amapkeySecret;
+    private final String URL;
 
-    private final String URL = "https://restapi.amap.com/v3/geocode/regeo?output=json&location=%f,%f&key=" + amapkeySecret;
+    public AmapServiceImpl(@Value("${amap.KeySecret}") String amapkeySecret) {
+        URL = "https://restapi.amap.com/v3/geocode/regeo?output=json&location=%f,%f&key=" + amapkeySecret;
+    }
 
     public String getFormattedAddress(double longitude, double latitude) {
         RestTemplate restTemplate = new RestTemplate();
