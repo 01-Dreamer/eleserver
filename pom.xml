@@ -8,11 +8,11 @@
         <version>3.4.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.example</groupId>
-    <artifactId>TestProject</artifactId>
+    <groupId>com.zxylearn</groupId>
+    <artifactId>eleserver</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>TestProject</name>
-    <description>TestProject</description>
+    <name>eleserver</name>
+    <description>eleserver</description>
     <url/>
     <licenses>
         <license/>
@@ -99,6 +99,21 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-elasticsearch</artifactId>
         </dependency>
 
         <dependency>
