@@ -20,11 +20,10 @@ import java.net.URI;
 @Service
 public class OssServiceImpl implements OssService {
 
-    @Autowired
-    private OssConfig ossConfig;
-
     private static final List<String> validExtensions = Arrays.asList("png", "jpg", "jpeg");
 
+    @Autowired
+    private OssConfig ossConfig;
 
     @Override
     public String uploadFile(MultipartFile file) {

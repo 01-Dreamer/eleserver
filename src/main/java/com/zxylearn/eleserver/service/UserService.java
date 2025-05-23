@@ -4,7 +4,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.zxylearn.eleserver.pojo.User;
 
 public interface UserService extends IService<User> {
-
     boolean addUser(User user);
-
 }
