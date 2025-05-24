@@ -88,9 +88,9 @@ public class AuthController {
         }
 
         // 生成用户专属Jwt令牌
-        String userRefreshToken = JwtUtil.generateToken(user.getId(), user.getEmail(), JwtUtil.REFRESH);
+        String userRefreshToken = JwtUtil.generateToken(user.getUserId(), user.getEmail(), JwtUtil.REFRESH);
         res.put("userRefreshToken", userRefreshToken);
-        res.put("userId", user.getId().toString());
+        res.put("userId", user.getUserId().toString());
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 

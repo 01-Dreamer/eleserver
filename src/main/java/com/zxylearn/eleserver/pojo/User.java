@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @TableName("User")
 public class User {
-    @TableId(type = IdType.AUTO)
-    private Integer id;
+    @TableId(value = "userId", type = IdType.AUTO)
+    private Integer userId;
 
     @TableField(value = "email")
     private String email;
