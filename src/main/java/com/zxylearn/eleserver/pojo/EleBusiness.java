@@ -25,8 +25,8 @@ public class EleBusiness {
     @Field(name = "store_description")
     private String storeDescription;
 
-    @Field(name = "store_volume")
-    private Integer storeVolume;
+    @Field(name = "store_cover")
+    private String storeCover;
 
     @Field(name = "store_items")
     private List<StoreItem> storeItems;
@@ -34,15 +34,27 @@ public class EleBusiness {
     @Field(name = "location")
     private Point location;
 
+    @Field(name = "location_text")
+    private String locationText;
+
+    @Field(name = "store_volume")
+    private Integer storeVolume;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class StoreItem {
+        @Field(name = "item_id")
+        private Integer itemId;
+
         @Field(name = "item_name")
         private String itemName;
 
         @Field(name = "item_description")
         private String itemDescription;
+
+        @Field(name = "item_cover")
+        private String itemCover;
 
         @Field(name = "item_price")
         private float itemPrice;

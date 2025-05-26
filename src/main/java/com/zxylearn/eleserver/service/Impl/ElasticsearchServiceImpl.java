@@ -64,16 +64,16 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
     @Override
     public boolean addStoreItem(String id, String itemName, String itemDescription, float itemPrice) {
-        if(itemPrice < 0) {
+        if (itemPrice < 0) {
             return false;
         }
         EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
         if (eleBusiness == null) {
             return false;
         }
-        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem(itemName, itemDescription, itemPrice);
+        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem(1, itemName, itemDescription, null, itemPrice);
         List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
-        if(storeItems == null) {
+        if (storeItems == null) {
             return false;
         }
         storeItems.add(storeItem);

@@ -9,7 +9,6 @@ import org.codehaus.jettison.json.JSONObject;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import java.text.SimpleDateFormat;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,7 +51,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
         if(messageJson == null) {
             return;
         }
-        System.out.println(messageJson);
         session.sendMessage(new TextMessage(messageJson));
 
         Integer toUserId = chatMessage.getReceiverId();

@@ -1,11 +1,14 @@
 package com.zxylearn.eleserver.controller;
 
+import com.zxylearn.eleserver.pojo.ChatMessage;
 import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.service.ChatMessageService;
 import com.zxylearn.eleserver.service.OssService;
 import com.zxylearn.eleserver.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -16,10 +19,21 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private ChatMessageService chatMessageService;
+
 
     @GetMapping("/all")
     public List<User> all() {
         return userService.list();
+    }
+
+    @GetMapping("/getChatMessage")
+    public List<ChatMessage> getChatMessage(
+            @RequestParam Integer id1,
+            @RequestParam Integer id2
+    ) {
+        return chatMessageService.getChatMessageByUserId(id1, id2);
     }
 
 
