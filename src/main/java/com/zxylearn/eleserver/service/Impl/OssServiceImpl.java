@@ -48,7 +48,6 @@ public class OssServiceImpl implements OssService {
             String extension = originalFilename.
                                substring(originalFilename.lastIndexOf('.')).
                                toLowerCase();
-            System.out.println(extension);
             if(!validExtensions.contains(extension)){
                 return null;
             }

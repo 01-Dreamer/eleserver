@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 public class AmapController {
 
@@ -21,7 +23,6 @@ public class AmapController {
             @RequestParam double longitude,
             @RequestParam double latitude
     ) {
-
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;
@@ -34,6 +35,25 @@ public class AmapController {
         }
 
         return amapService.getFormattedAddress(longitude, latitude);
+    }
+
+    @GetMapping("/getPosition")
+    public Map<String, Double> getLocation(
+            HttpServletRequest request,
+            @RequestParam String address
+    ) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return null;
+        }
+
+        return amapService.getPosition(address);
     }
 
 }

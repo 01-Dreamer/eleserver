@@ -29,6 +29,7 @@ public class AuthController {
     private UserService userService;
 
 
+    // 获取短期Jwt令牌
     @PostMapping("/getAccessToken")
     public ResponseEntity<Map<String, String>> getAccessToken(HttpServletRequest request) {
         Map<String, String> res = new HashMap<>();
@@ -61,6 +62,7 @@ public class AuthController {
     }
 
 
+    // 登录
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
         Map<String, String> res = new HashMap<>();
@@ -91,6 +93,77 @@ public class AuthController {
         String userRefreshToken = JwtUtil.generateToken(user.getUserId(), user.getEmail(), JwtUtil.REFRESH);
         res.put("userRefreshToken", userRefreshToken);
         res.put("userId", user.getUserId().toString());
+        res.put("avatar", user.getAvatar());
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+
+    // 退出登录，将Jwt令牌放入Redis，记录黑名单
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
+        Map<String, String> res = new HashMap<>();
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            res.put("error", "missing or invalid authorization header");
+            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
+        }
+
+        // 检查Jwt令牌的合法性
+        String refreshToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(refreshToken) || !JwtUtil.getType(refreshToken).equals(JwtUtil.REFRESH)) {
+            res.put("error", "invalid or expired refresh token");
+            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
+        }
+
+        String tokenId = JwtUtil.getTokenId(refreshToken);
+        long timeout = JwtUtil.getTokenExpirationTime(refreshToken);
+        redisUtil.set(tokenId, "black", timeout, RedisUtil.JWT_REDIS);
+
+        res.put("success", "success to logout");
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+
+    // 通过长期Jwt令牌登录
+    @PostMapping("/loginByRefreshToken")
+    public ResponseEntity<Map<String, String>> loginByRefreshToken(HttpServletRequest request) {
+        Map<String, String> res = new HashMap<>();
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            res.put("error", "missing or invalid authorization header");
+            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
+        }
+
+        // 检查长期Jwt令牌的合法性
+        String refreshToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(refreshToken) || !JwtUtil.getType(refreshToken).equals(JwtUtil.REFRESH)) {
+            res.put("error", "invalid or expired refresh token");
+            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
+        }
+
+        // 检查Jwt令牌是否在黑名单中
+        String tokenId = JwtUtil.getTokenId(refreshToken);
+        if (redisUtil.exists(tokenId, RedisUtil.JWT_REDIS)) {
+            res.put("error", "refresh token is put on the blacklist");
+            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
+        }
+
+        // 获取用户
+        Integer userId = JwtUtil.getUserId(refreshToken);
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        wrapper.eq("userId", userId);
+        User user = userService.getOne(wrapper);
+        if (user == null) {
+            res.put("error", "failed to find user");
+            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
+        }
+
+        // 返回用户信息
+        res.put("userRefreshToken", refreshToken);
+        res.put("userId", user.getUserId().toString());
+        res.put("email", user.getEmail());
         res.put("avatar", user.getAvatar());
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
@@ -139,32 +212,6 @@ public class AuthController {
             return new ResponseEntity<>(res, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-    }
-
-    // 退出登录，将Jwt令牌放入Redis，记录黑名单
-    @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
-        Map<String, String> res = new HashMap<>();
-
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            res.put("error", "missing or invalid authorization header");
-            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
-        }
-
-        // 检查Jwt令牌的合法性
-        String refreshToken = authHeader.substring(7);
-        if (!JwtUtil.verifyToken(refreshToken) || !JwtUtil.getType(refreshToken).equals(JwtUtil.REFRESH)) {
-            res.put("error", "invalid or expired refresh token");
-            return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
-        }
-
-        String tokenId = JwtUtil.getTokenId(refreshToken);
-        long timeout = JwtUtil.getTokenExpirationTime(refreshToken);
-        redisUtil.set(tokenId, "black", timeout, RedisUtil.JWT_REDIS);
-
-        res.put("success", "success to logout");
-        return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
 

@@ -9,19 +9,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Map;
+
 @Slf4j
 @Service
 public class AmapServiceImpl implements AmapService {
 
-    private final String URL;
+    private final String amapkeySecret;
 
     public AmapServiceImpl(@Value("${amap.KeySecret}") String amapkeySecret) {
-        URL = "https://restapi.amap.com/v3/geocode/regeo?output=json&location=%f,%f&key=" + amapkeySecret;
+        this.amapkeySecret = amapkeySecret;
     }
 
     public String getFormattedAddress(double longitude, double latitude) {
+        String url = "https://restapi.amap.com/v3/geocode/regeo?output=json&location=%f,%f&key=" + amapkeySecret;
+
         RestTemplate restTemplate = new RestTemplate();
-        String requestUrl = String.format(URL, longitude, latitude);
+        String requestUrl = String.format(url, longitude, latitude);
         ResponseEntity<String> response = restTemplate.getForEntity(requestUrl, String.class);
         String responseBody = response.getBody();
 
@@ -39,4 +43,39 @@ public class AmapServiceImpl implements AmapService {
             return null;
         }
     }
+
+
+    public Map<String, Double> getPosition(String address) {
+        String url = "https://restapi.amap.com/v3/geocode/geo?address=%s&output=json&key=" + amapkeySecret;
+
+        RestTemplate restTemplate = new RestTemplate();
+        String requestUrl = String.format(url, address);
+        ResponseEntity<String> response = restTemplate.getForEntity(requestUrl, String.class);
+        String responseBody = response.getBody();
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+
+            JsonNode geocodesNode = rootNode.path("geocodes");
+            if (geocodesNode.isArray() && !geocodesNode.isEmpty()) {
+                JsonNode firstGeoNode = geocodesNode.get(0);
+                String location = firstGeoNode.path("location").asText(); // 获取经纬度信息，格式为 "longitude,latitude"
+                String[] coordinates = location.split(",");
+
+                if (coordinates.length == 2) {
+                    double longitude = Double.parseDouble(coordinates[0]);
+                    double latitude = Double.parseDouble(coordinates[1]);
+                    return Map.of("longitude", longitude, "latitude", latitude);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("failed to get location for address '{}': {}", address, e.getMessage());
+        }
+        return null;
+    }
+
+
+
+
 }

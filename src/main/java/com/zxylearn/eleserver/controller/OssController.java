@@ -45,10 +45,10 @@ public class OssController {
         String new_avatar = ossService.uploadFile(file);
         String old_avatar = userService.getAvatarByUserId(userId);
         if (!userService.updateAvatar(userId, new_avatar)) {
-            log.error("failed to update avatar, userId={} avatar={}", userId, new_avatar);
+            log.warn("failed to update avatar, userId={} avatar={}", userId, new_avatar);
         }
         if (old_avatar != null && !ossService.deleteFile(old_avatar)) {
-            log.error("failed to delete old avatar: {}", old_avatar);
+            log.warn("failed to delete old avatar: {}", old_avatar);
         }
 
 
