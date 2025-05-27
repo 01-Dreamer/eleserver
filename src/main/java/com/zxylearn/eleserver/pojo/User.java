@@ -21,4 +21,7 @@ public class User {
 
     @TableField(value = "password")
     private String password;
+
+    @TableField(value = "avatar")
+    private String avatar;
 }

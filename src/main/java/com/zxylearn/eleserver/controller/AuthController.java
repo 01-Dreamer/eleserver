@@ -33,7 +33,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> getAccessToken(HttpServletRequest request) {
         Map<String, String> res = new HashMap<>();
 
-        String authHeader=request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             res.put("error", "missing or invalid authorization header");
             return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
@@ -41,21 +41,21 @@ public class AuthController {
 
         // 检查长期Jwt令牌的合法性
         String refreshToken = authHeader.substring(7);
-        if(!JwtUtil.verifyToken(refreshToken) || !JwtUtil.getType(refreshToken).equals(JwtUtil.REFRESH)) {
+        if (!JwtUtil.verifyToken(refreshToken) || !JwtUtil.getType(refreshToken).equals(JwtUtil.REFRESH)) {
             res.put("error", "invalid or expired refresh token");
             return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
         }
 
         // 检查Jwt令牌是否在黑名单中
         String tokenId = JwtUtil.getTokenId(refreshToken);
-        if(redisUtil.exists(tokenId, RedisUtil.JWT_REDIS)) {
+        if (redisUtil.exists(tokenId, RedisUtil.JWT_REDIS)) {
             res.put("error", "refresh token is put on the blacklist");
             return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
         }
 
         Integer userId = JwtUtil.getUserId(refreshToken);
         String email = JwtUtil.getEmail(refreshToken);
-        String accessToken = JwtUtil.generateToken(userId,email,JwtUtil.ACCESS);
+        String accessToken = JwtUtil.generateToken(userId, email, JwtUtil.ACCESS);
         res.put("accessToken", accessToken);
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
@@ -91,6 +91,7 @@ public class AuthController {
         String userRefreshToken = JwtUtil.generateToken(user.getUserId(), user.getEmail(), JwtUtil.REFRESH);
         res.put("userRefreshToken", userRefreshToken);
         res.put("userId", user.getUserId().toString());
+        res.put("avatar", user.getAvatar());
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
@@ -121,7 +122,7 @@ public class AuthController {
         }
 
         //检查密码是否合法
-        if(!isValidPassword(password)) {
+        if (!isValidPassword(password)) {
             res.put("error", "password is invalid");
             return new ResponseEntity<>(res, HttpStatus.FORBIDDEN);
         }
@@ -130,11 +131,10 @@ public class AuthController {
         User user = new User();
         user.setEmail(email);
         user.setPassword(PasswordUtil.encode(password));
-        if(userService.addUser(user)) {
+        if (userService.addUser(user)) {
             res.put("success", "success to register");
             return new ResponseEntity<>(HttpStatus.OK);
-        }
-        else {
+        } else {
             res.put("error", "server mysql error");
             return new ResponseEntity<>(res, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -146,7 +146,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> logout(HttpServletRequest request) {
         Map<String, String> res = new HashMap<>();
 
-        String authHeader=request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             res.put("error", "missing or invalid authorization header");
             return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
@@ -154,7 +154,7 @@ public class AuthController {
 
         // 检查Jwt令牌的合法性
         String refreshToken = authHeader.substring(7);
-        if(!JwtUtil.verifyToken(refreshToken) || !JwtUtil.getType(refreshToken).equals(JwtUtil.REFRESH)) {
+        if (!JwtUtil.verifyToken(refreshToken) || !JwtUtil.getType(refreshToken).equals(JwtUtil.REFRESH)) {
             res.put("error", "invalid or expired refresh token");
             return new ResponseEntity<>(res, HttpStatus.UNAUTHORIZED);
         }
@@ -170,6 +170,7 @@ public class AuthController {
 
     // 判断密码是否合法
     private static final String regex = "^[A-Za-z0-9]{1,20}$";
+
     public static boolean isValidPassword(String password) {
         Pattern pattern = Pattern.compile(regex);
         return pattern.matcher(password).matches();

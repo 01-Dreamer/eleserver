@@ -5,4 +5,6 @@ import com.zxylearn.eleserver.pojo.User;
 
 public interface UserService extends IService<User> {
     boolean addUser(User user);
+    boolean updateAvatar(Integer userId, String avatar);
+    String getAvatarByUserId(Integer userId);
 }
