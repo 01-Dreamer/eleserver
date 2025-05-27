@@ -217,7 +217,6 @@ public class AuthController {
 
     // 判断密码是否合法
     private static final String regex = "^[A-Za-z0-9]{1,20}$";
-
     public static boolean isValidPassword(String password) {
         Pattern pattern = Pattern.compile(regex);
         return pattern.matcher(password).matches();

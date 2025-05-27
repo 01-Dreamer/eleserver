@@ -57,6 +57,6 @@ public class EleBusiness {
         private String itemCover;
 
         @Field(name = "item_price")
-        private float itemPrice;
+        private Float itemPrice;
     }
 }

@@ -21,9 +21,9 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         if (esOps.exists(id, EleBusiness.class)) {
             return false;
         }
-
         EleBusiness eleBusiness = new EleBusiness();
         eleBusiness.setId(id);
+        eleBusiness.setStoreVolume(0);
         eleBusiness.setStoreItems(new ArrayList<>());
         esOps.save(eleBusiness);
         return true;
@@ -52,6 +52,17 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
+    public boolean updateStoreCover(String id, String storeCover) {
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        eleBusiness.setStoreCover(storeCover);
+        esOps.save(eleBusiness);
+        return true;
+    }
+
+    @Override
     public boolean updateStoreVolume(String id, Integer storeVolume) {
         EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
         if (eleBusiness == null) {
@@ -63,43 +74,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
-    public boolean addStoreItem(String id, String itemName, String itemDescription, float itemPrice) {
-        if (itemPrice < 0) {
-            return false;
-        }
-        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
-        if (eleBusiness == null) {
-            return false;
-        }
-        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem(1, itemName, itemDescription, null, itemPrice);
-        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
-        if (storeItems == null) {
-            return false;
-        }
-        storeItems.add(storeItem);
-        esOps.save(eleBusiness);
-        return true;
-    }
-
-    @Override
-    public boolean delStoreItem(String id, String itemName) {
-        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
-        if (eleBusiness == null) {
-            return false;
-        }
-        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
-        for (EleBusiness.StoreItem item : storeItems) {
-            if (item.getItemName().equals(itemName)) {
-                storeItems.remove(item);
-                esOps.save(eleBusiness);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public boolean updateLocation(String id, double longitude, double latitude) {
+    public boolean updateLocation(String id, Double longitude, Double latitude) {
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
             return false;
         }
@@ -113,6 +88,54 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         eleBusiness.setLocation(location);
         esOps.save(eleBusiness);
         return true;
+    }
+
+    @Override
+    public boolean updateLocationText(String id, String locationText) {
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        eleBusiness.setLocationText(locationText);
+        esOps.save(eleBusiness);
+        return true;
+    }
+
+    @Override
+    public boolean addStoreItem(String id, String itemName, String itemDescription, String itemCover, Float itemPrice) {
+        if (itemPrice < 0) {
+            return false;
+        }
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        int itemCount = eleBusiness.getStoreItems().size();
+        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem(itemCount + 1, itemName, itemDescription, itemCover, itemPrice);
+        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
+        if (storeItems == null) {
+            return false;
+        }
+        storeItems.add(storeItem);
+        esOps.save(eleBusiness);
+        return true;
+    }
+
+    @Override
+    public boolean delStoreItem(String id, Integer itemId) {
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
+        for (EleBusiness.StoreItem item : storeItems) {
+            if (item.getItemId().equals(itemId)) {
+                storeItems.remove(item);
+                esOps.save(eleBusiness);
+                return true;
+            }
+        }
+        return false;
     }
 
 }
