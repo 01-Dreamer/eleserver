@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.data.geo.Point;
+
 import java.util.List;
 
 @Data
@@ -28,7 +30,7 @@ public class EleBusiness {
     @Field(name = "store_cover")
     private String storeCover;
 
-    @Field(name = "store_items")
+    @Field(name = "store_items", type = FieldType.Nested)
     private List<StoreItem> storeItems;
 
     @Field(name = "location")
@@ -39,6 +41,9 @@ public class EleBusiness {
 
     @Field(name = "store_volume")
     private Integer storeVolume;
+
+    @Field(name = "item_index")
+    private Integer itemIndex;
 
     @Data
     @NoArgsConstructor

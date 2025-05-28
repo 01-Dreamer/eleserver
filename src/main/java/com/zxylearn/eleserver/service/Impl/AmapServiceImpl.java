@@ -44,7 +44,6 @@ public class AmapServiceImpl implements AmapService {
         }
     }
 
-
     public Map<String, Double> getPosition(String address) {
         String url = "https://restapi.amap.com/v3/geocode/geo?address=%s&output=json&key=" + amapkeySecret;
 
@@ -76,6 +75,37 @@ public class AmapServiceImpl implements AmapService {
     }
 
 
+    @Override
+    public Map<String, Double> getDistance(double longitude1, double latitude1, double longitude2, double latitude2) {
+        String urlTemplate = "https://restapi.amap.com/v3/direction/driving?origin=%f,%f&destination=%f,%f&output=json&key=" + amapkeySecret;
+        String requestUrl = String.format(urlTemplate, longitude1, latitude1, longitude2, latitude2);
 
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.getForEntity(requestUrl, String.class);
+        String responseBody = response.getBody();
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+
+            if (!"1".equals(rootNode.path("status").asText())) {
+                log.warn("amap API returned error: {}", rootNode.path("info").asText());
+                return null;
+            }
+
+            JsonNode paths = rootNode.path("route").path("paths");
+            if (paths.isArray() && !paths.isEmpty()) {
+                JsonNode firstPath = paths.get(0);
+                double distance = firstPath.path("distance").asDouble();
+                double duration = firstPath.path("duration").asDouble();
+
+                return Map.of("distance", distance, "duration", duration);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get distance info: {}", e.getMessage());
+        }
+
+        return null;
+    }
 
 }

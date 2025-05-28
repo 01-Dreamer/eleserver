@@ -1,14 +1,24 @@
 package com.zxylearn.eleserver.service.Impl;
 
+
 import com.zxylearn.eleserver.pojo.EleBusiness;
 import com.zxylearn.eleserver.service.ElasticsearchService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.Criteria;
+import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.data.elasticsearch.core.query.Query;
+import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
 
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ElasticsearchServiceImpl implements ElasticsearchService {
@@ -24,6 +34,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         EleBusiness eleBusiness = new EleBusiness();
         eleBusiness.setId(id);
         eleBusiness.setStoreVolume(0);
+        eleBusiness.setItemIndex(0);
         eleBusiness.setStoreItems(new ArrayList<>());
         esOps.save(eleBusiness);
         return true;
@@ -110,8 +121,9 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         if (eleBusiness == null) {
             return false;
         }
-        int itemCount = eleBusiness.getStoreItems().size();
-        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem(itemCount + 1, itemName, itemDescription, itemCover, itemPrice);
+        Integer itemIndex = eleBusiness.getItemIndex() + 1;
+        eleBusiness.setItemIndex(itemIndex);
+        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem(itemIndex, itemName, itemDescription, itemCover, itemPrice);
         List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
         if (storeItems == null) {
             return false;
@@ -119,6 +131,29 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         storeItems.add(storeItem);
         esOps.save(eleBusiness);
         return true;
+    }
+
+    @Override
+    public boolean modifyStoreItem(String id, Integer itemId, String itemName, String itemDescription, String itemCover, Float itemPrice) {
+        if (itemPrice < 0) {
+            return false;
+        }
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
+        for (EleBusiness.StoreItem item : storeItems) {
+            if (item.getItemId().equals(itemId)) {
+                item.setItemName(itemName);
+                item.setItemDescription(itemDescription);
+                item.setItemCover(itemCover);
+                item.setItemPrice(itemPrice);
+                esOps.save(eleBusiness);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -138,4 +173,55 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         return false;
     }
 
+    @Override
+    public EleBusiness getEleBusinessById(String id) {
+        return esOps.get(id, EleBusiness.class);
+    }
+
+    @Override
+    public List<EleBusiness> getAllEleBusiness() {
+        Criteria criteria = new Criteria();
+        Query query = new CriteriaQuery(criteria)
+                .addSort(Sort.by("_id").ascending());
+        SearchHits<EleBusiness> searchHits = esOps.search(query, EleBusiness.class);
+        return searchHits.stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EleBusiness> getEleBusinessByKeyword(String keyword) {
+        String queryJson = String.format("""
+                {
+                  "bool": {
+                    "should": [
+                      {
+                        "multi_match": {
+                          "query": "%s",
+                          "fields": ["store_name^3", "store_description"],
+                          "type": "best_fields"
+                        }
+                      },
+                      {
+                        "nested": {
+                          "path": "store_items",
+                          "query": {
+                            "multi_match": {
+                              "query": "%s",
+                              "fields": ["store_items.item_name^3", "store_items.item_description"],
+                              "type": "best_fields"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+                """, keyword, keyword);
+        StringQuery query = new StringQuery(queryJson);
+        SearchHits<EleBusiness> searchHits = esOps.search(query, EleBusiness.class);
+        return searchHits.stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+    }
 }
