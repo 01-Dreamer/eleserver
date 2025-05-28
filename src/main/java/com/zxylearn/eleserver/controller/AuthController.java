@@ -161,7 +161,6 @@ public class AuthController {
         }
 
         // 返回用户信息
-        res.put("userRefreshToken", refreshToken);
         res.put("userId", user.getUserId().toString());
         res.put("email", user.getEmail());
         res.put("avatar", user.getAvatar());

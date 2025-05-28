@@ -2,7 +2,9 @@ package com.zxylearn.eleserver.handler;
 
 
 import com.zxylearn.eleserver.pojo.ChatMessage;
+import com.zxylearn.eleserver.pojo.User;
 import com.zxylearn.eleserver.service.ChatMessageService;
+import com.zxylearn.eleserver.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -19,17 +22,27 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
+    private final UserService userService;
     private final ChatMessageService chatMessageService;
     private final Map<Integer, WebSocketSession> sessions;
-    public WebSocketHandler(ChatMessageService chatMessageService) {
+
+    public WebSocketHandler(UserService userService,
+                            ChatMessageService chatMessageService
+    ) {
+        this.userService = userService;
         this.chatMessageService = chatMessageService;
         this.sessions = new ConcurrentHashMap<>();
     }
 
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session){
-        Integer userId = (Integer)session.getAttributes().get("userId");
+    public void afterConnectionEstablished(WebSocketSession session) throws IOException {
+        Integer userId = (Integer) session.getAttributes().get("userId");
+        if (sessions.containsKey(userId)) {
+            session.close(CloseStatus.NOT_ACCEPTABLE);
+            log.warn("User id = {} tried to connect again, connection rejected", userId);
+            return;
+        }
         sessions.put(userId, session);
         log.info("User id = {} connected", userId);
     }
@@ -38,24 +51,30 @@ public class WebSocketHandler extends TextWebSocketHandler {
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
         ChatMessage chatMessage = parseMessage(payload);
-        if(chatMessage == null) {
+        if (chatMessage == null) {
+            return;
+        }
+
+        Integer receiverId = chatMessage.getReceiverId();
+        if (!userService.existsById(receiverId)) {
+            log.warn("failed to find receiver, receiverId={}", receiverId);
             return;
         }
 
         chatMessage.setCreateTime(LocalDateTime.now());
-        if(!chatMessageService.addChatMessage(chatMessage)) {
+        if (!chatMessageService.addChatMessage(chatMessage)) {
             log.error("failed to add chat message: {}", chatMessage);
         }
 
         String messageJson = convertChatMessageToJson(chatMessage);
-        if(messageJson == null) {
+        if (messageJson == null) {
             return;
         }
         session.sendMessage(new TextMessage(messageJson));
 
         Integer toUserId = chatMessage.getReceiverId();
         WebSocketSession toSession = sessions.get(toUserId);
-        if(toSession == null) {
+        if (toSession == null) {
             return;
         }
 
@@ -72,7 +91,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        Integer userId = (Integer)session.getAttributes().get("userId");
+        Integer userId = (Integer) session.getAttributes().get("userId");
         sessions.remove(userId);
         if (session.isOpen()) {
             session.close();
@@ -101,7 +120,6 @@ public class WebSocketHandler extends TextWebSocketHandler {
         }
     }
 
-
     public static String convertChatMessageToJson(ChatMessage message) {
         try {
             JSONObject json = new JSONObject();
@@ -117,7 +135,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
 
             return json.toString();
         } catch (JSONException e) {
-            System.err.println("Failed to convert ChatMessage to JSON: " + e.getMessage());
+            log.error("failed to convert ChatMessage to JSON: {}", e.getMessage());
             return null;
         }
     }

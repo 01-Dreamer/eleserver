@@ -35,6 +35,16 @@ public class UserServiceImpl
     }
 
     @Override
+    public boolean existsById(Integer userId) {
+        if(userId == null) {
+            return false;
+        }
+        UpdateWrapper<User> existsWrapper = new UpdateWrapper<>();
+        existsWrapper.eq("userId", userId);
+        return baseMapper.exists(existsWrapper);
+    }
+
+    @Override
     public String getAvatarByUserId(Integer userId) {
         if (userId == null) {
             return null;

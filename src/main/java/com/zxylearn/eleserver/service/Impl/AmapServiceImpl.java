@@ -98,11 +98,10 @@ public class AmapServiceImpl implements AmapService {
                 JsonNode firstPath = paths.get(0);
                 double distance = firstPath.path("distance").asDouble();
                 double duration = firstPath.path("duration").asDouble();
-
                 return Map.of("distance", distance, "duration", duration);
             }
         } catch (Exception e) {
-            log.warn("Failed to get distance info: {}", e.getMessage());
+            log.warn("failed to get distance: {}", e.getMessage());
         }
 
         return null;
