@@ -113,6 +113,45 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
+    public boolean updateStoreItemCover(String id, Integer itemId, String storeItemCover) {
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
+        for (EleBusiness.StoreItem item : storeItems) {
+            if (item.getItemId().equals(itemId)) {
+                item.setItemCover(storeItemCover);
+                esOps.save(eleBusiness);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean updateStoreItemText(String id, Integer itemId, String itemName, String itemDescription, Float itemPrice) {
+        if (itemPrice < 0) {
+            return false;
+        }
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
+        for (EleBusiness.StoreItem item : storeItems) {
+            if (item.getItemId().equals(itemId)) {
+                item.setItemName(itemName);
+                item.setItemDescription(itemDescription);
+                item.setItemPrice(itemPrice);
+                esOps.save(eleBusiness);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean addStoreItem(String id, String itemName, String itemDescription, String itemCover, Float itemPrice) {
         if (itemPrice < 0) {
             return false;
@@ -131,29 +170,6 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         storeItems.add(storeItem);
         esOps.save(eleBusiness);
         return true;
-    }
-
-    @Override
-    public boolean modifyStoreItem(String id, Integer itemId, String itemName, String itemDescription, String itemCover, Float itemPrice) {
-        if (itemPrice < 0) {
-            return false;
-        }
-        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
-        if (eleBusiness == null) {
-            return false;
-        }
-        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
-        for (EleBusiness.StoreItem item : storeItems) {
-            if (item.getItemId().equals(itemId)) {
-                item.setItemName(itemName);
-                item.setItemDescription(itemDescription);
-                item.setItemCover(itemCover);
-                item.setItemPrice(itemPrice);
-                esOps.save(eleBusiness);
-                return true;
-            }
-        }
-        return false;
     }
 
     @Override

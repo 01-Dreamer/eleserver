@@ -129,7 +129,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
             json.put("content", message.getContent());
 
             LocalDateTime createTime = message.getCreateTime();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-M-d HH:mm");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
             String formattedTime = createTime.format(formatter);
             json.put("createTime", formattedTime);
 

@@ -19,7 +19,6 @@ public class AuthHandshakeInterceptor implements HandshakeInterceptor {
                                    WebSocketHandler wsHandler,
                                    Map<String, Object> attributes) {
 
-
         String query = request.getURI().getQuery();
         if (query != null && query.startsWith("token=")) {
             try {
