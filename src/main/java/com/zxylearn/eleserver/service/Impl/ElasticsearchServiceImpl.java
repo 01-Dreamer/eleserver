@@ -33,6 +33,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         }
         EleBusiness eleBusiness = new EleBusiness();
         eleBusiness.setId(id);
+        eleBusiness.setStoreName("商家" + id);
+        eleBusiness.setStoreDescription("我是商家" + id);
         eleBusiness.setStoreVolume(0);
         eleBusiness.setItemIndex(0);
         eleBusiness.setStoreItems(new ArrayList<>());
@@ -41,22 +43,12 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
-    public boolean updateStoreName(String id, String storeName) {
+    public boolean updateStoreText(String id, String storeName, String storeDescription) {
         EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
         if (eleBusiness == null) {
             return false;
         }
         eleBusiness.setStoreName(storeName);
-        esOps.save(eleBusiness);
-        return true;
-    }
-
-    @Override
-    public boolean updateStoreDescription(String id, String storeDescription) {
-        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
-        if (eleBusiness == null) {
-            return false;
-        }
         eleBusiness.setStoreDescription(storeDescription);
         esOps.save(eleBusiness);
         return true;
@@ -152,24 +144,22 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
-    public boolean addStoreItem(String id, String itemName, String itemDescription, String itemCover, Float itemPrice) {
-        if (itemPrice < 0) {
-            return false;
-        }
+    public Integer addStoreItem(String id) {
         EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
         if (eleBusiness == null) {
-            return false;
+            return -1;
         }
         Integer itemIndex = eleBusiness.getItemIndex() + 1;
         eleBusiness.setItemIndex(itemIndex);
-        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem(itemIndex, itemName, itemDescription, itemCover, itemPrice);
+        EleBusiness.StoreItem storeItem = new EleBusiness.StoreItem();
+        storeItem.setItemId(itemIndex);
         List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
         if (storeItems == null) {
-            return false;
+            return -1;
         }
         storeItems.add(storeItem);
         esOps.save(eleBusiness);
-        return true;
+        return itemIndex;
     }
 
     @Override
@@ -187,6 +177,21 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
             }
         }
         return false;
+    }
+
+    @Override
+    public String getStoreItemCover(String id, Integer itemId) {
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return null;
+        }
+        List<EleBusiness.StoreItem> storeItems = eleBusiness.getStoreItems();
+        for (EleBusiness.StoreItem item : storeItems) {
+            if (item.getItemId().equals(itemId)) {
+                return item.getItemName();
+            }
+        }
+        return null;
     }
 
     @Override

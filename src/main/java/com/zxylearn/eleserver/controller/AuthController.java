@@ -5,11 +5,13 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.zxylearn.eleserver.pojo.LoginRequest;
 import com.zxylearn.eleserver.pojo.RegisterRequest;
 import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.service.ElasticsearchService;
 import com.zxylearn.eleserver.service.UserService;
 import com.zxylearn.eleserver.utils.JwtUtil;
 import com.zxylearn.eleserver.utils.PasswordUtil;
 import com.zxylearn.eleserver.utils.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+@Slf4j
 @RestController
 public class AuthController {
 
@@ -27,6 +30,8 @@ public class AuthController {
     private RedisUtil redisUtil;
     @Autowired
     private UserService userService;
+    @Autowired
+    private ElasticsearchService elasticsearchService;
 
 
     // 获取短期Jwt令牌
@@ -203,8 +208,15 @@ public class AuthController {
         User user = new User();
         user.setEmail(email);
         user.setPassword(PasswordUtil.encode(password));
+
+
         if (userService.addUser(user)) {
             res.put("success", "success to register");
+
+            if(!elasticsearchService.createDoc(user.getUserId().toString())) {
+                log.error("failed to create doc, userId={}", user.getUserId());
+            }
+
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
             res.put("error", "server mysql error");
