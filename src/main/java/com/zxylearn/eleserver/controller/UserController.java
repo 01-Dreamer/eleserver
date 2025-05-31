@@ -10,11 +10,14 @@ import com.zxylearn.eleserver.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -28,6 +31,9 @@ public class UserController {
     @Autowired
     private ChatMessageService chatMessageService;
 
+    ///////////////////////////////////////////////////
+    /// 获取聊天信息
+    ///////////////////////////////////////////////////
     @GetMapping("/getChatMessage")
     public List<ChatMessage> getChatMessage(
             HttpServletRequest request,
@@ -54,7 +60,9 @@ public class UserController {
         }
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 获取用户头像
+    ///////////////////////////////////////////////////
     @GetMapping("/getOtherAvatar")
     public String getOtherAvatar(
             HttpServletRequest request,
@@ -79,7 +87,9 @@ public class UserController {
         }
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 更新用户头像
+    ///////////////////////////////////////////////////
     @PostMapping("/updateAvatar")
     public String updateAvatar(
             HttpServletRequest request,
@@ -110,7 +120,9 @@ public class UserController {
         return newAvatar;
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 更新商店封面
+    ///////////////////////////////////////////////////
     @PostMapping("updateStoreCover")
     public String updateStoreCover(
             HttpServletRequest request,
@@ -146,7 +158,9 @@ public class UserController {
         return newStoreCover;
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 更新商店信息
+    ///////////////////////////////////////////////////
     @PostMapping("updateStoreText")
     public boolean updateStoreText(
             HttpServletRequest request,
@@ -168,7 +182,29 @@ public class UserController {
         return elasticsearchService.updateStoreText(userId, storeName, storeDescription);
     }
 
+    ///////////////////////////////////////////////////
+    /// 增加商店销量
+    ///////////////////////////////////////////////////
+    @PostMapping("addStoreVolume")
+    public boolean addStoreVolume(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return false;
+        }
 
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return false;
+        }
+
+        String userId = JwtUtil.getUserId(accessToken).toString();
+        return elasticsearchService.addStoreVolume(userId);
+    }
+
+    ///////////////////////////////////////////////////
+    /// 增加商品
+    ///////////////////////////////////////////////////
     @PostMapping("addStoreItem")
     public Integer addStoreItem(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
@@ -186,7 +222,9 @@ public class UserController {
         return elasticsearchService.addStoreItem(userId);
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 删除商品
+    ///////////////////////////////////////////////////
     @DeleteMapping("delStoreItem")
     public boolean delStoreItem(
             HttpServletRequest request,
@@ -212,7 +250,9 @@ public class UserController {
         return elasticsearchService.delStoreItem(userId,itemId);
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 更新商品封面
+    ///////////////////////////////////////////////////
     @PostMapping("updateStoreItemCover")
     public String updateStoreItemCover(
             HttpServletRequest request,
@@ -244,7 +284,9 @@ public class UserController {
         return newItemCover;
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 增加商品信息
+    ///////////////////////////////////////////////////
     @PostMapping("updateStoreItemText")
     public boolean updateStoreItemText(
             HttpServletRequest request,
@@ -265,8 +307,29 @@ public class UserController {
         }
 
         String userId = JwtUtil.getUserId(accessToken).toString();
-
         return elasticsearchService.updateStoreItemText(userId, itemId, itemName, itemDescription, itemPrice);
+    }
+
+    ///////////////////////////////////////////////////
+    /// 获取所有商家信息
+    ///////////////////////////////////////////////////
+    @GetMapping("getAllEleBusiness")
+    public List<EleBusiness> getAllEleBusiness(
+            HttpServletRequest request
+    ) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return null;
+        }
+
+        String userId = JwtUtil.getUserId(accessToken).toString();
+        return elasticsearchService.getAllEleBusinessOrderById(userId);
     }
 
 

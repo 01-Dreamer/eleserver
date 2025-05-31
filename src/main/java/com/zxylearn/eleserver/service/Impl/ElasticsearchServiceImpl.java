@@ -35,6 +35,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         eleBusiness.setId(id);
         eleBusiness.setStoreName("商家" + id);
         eleBusiness.setStoreDescription("我是商家" + id);
+        eleBusiness.setLocationText("云南大学呈贡校区软件学院");
+        eleBusiness.setLocation(new Point(102.850549, 24.826936));
         eleBusiness.setStoreVolume(0);
         eleBusiness.setItemIndex(0);
         eleBusiness.setStoreItems(new ArrayList<>());
@@ -66,18 +68,19 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
-    public boolean updateStoreVolume(String id, Integer storeVolume) {
+    public boolean addStoreVolume(String id) {
         EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
         if (eleBusiness == null) {
             return false;
         }
-        eleBusiness.setStoreVolume(storeVolume);
+        Integer newStoreVolume = eleBusiness.getStoreVolume() + 1;
+        eleBusiness.setStoreVolume(newStoreVolume);
         esOps.save(eleBusiness);
         return true;
     }
 
     @Override
-    public boolean updateLocation(String id, Double longitude, Double latitude) {
+    public boolean updateLocation(String id, Double longitude, Double latitude, String locationText) {
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
             return false;
         }
@@ -87,22 +90,12 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
             return false;
         }
 
-        Point location = new Point(latitude, longitude);
-        eleBusiness.setLocation(location);
-        esOps.save(eleBusiness);
-        return true;
-    }
-
-    @Override
-    public boolean updateLocationText(String id, String locationText) {
-        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
-        if (eleBusiness == null) {
-            return false;
-        }
+        eleBusiness.setLocation(new Point(longitude, latitude));
         eleBusiness.setLocationText(locationText);
         esOps.save(eleBusiness);
         return true;
     }
+
 
     @Override
     public boolean updateStoreItemCover(String id, Integer itemId, String storeItemCover) {
@@ -200,8 +193,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
-    public List<EleBusiness> getAllEleBusiness() {
-        Criteria criteria = new Criteria();
+    public List<EleBusiness> getAllEleBusinessOrderById(String idToExclude) {
+        Criteria criteria = new Criteria("_id").not().is(idToExclude);
         Query query = new CriteriaQuery(criteria)
                 .addSort(Sort.by("_id").ascending());
         SearchHits<EleBusiness> searchHits = esOps.search(query, EleBusiness.class);
@@ -211,34 +204,48 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
-    public List<EleBusiness> getEleBusinessByKeyword(String keyword) {
+    public List<EleBusiness> getALLEleBusinessByKeyword(String keyword, String idToExclude) {
         String queryJson = String.format("""
-                {
-                  "bool": {
-                    "should": [
-                      {
-                        "multi_match": {
-                          "query": "%s",
-                          "fields": ["store_name^3", "store_description"],
-                          "type": "best_fields"
-                        }
-                      },
-                      {
-                        "nested": {
-                          "path": "store_items",
-                          "query": {
-                            "multi_match": {
-                              "query": "%s",
-                              "fields": ["store_items.item_name^3", "store_items.item_description"],
-                              "type": "best_fields"
+            {
+              "bool": {
+                "must": [
+                  {
+                    "bool": {
+                      "should": [
+                        {
+                          "multi_match": {
+                            "query": "%s",
+                            "fields": ["store_name^3", "store_description"],
+                            "type": "best_fields"
+                          }
+                        },
+                        {
+                          "nested": {
+                            "path": "store_items",
+                            "query": {
+                              "multi_match": {
+                                "query": "%s",
+                                "fields": ["store_items.item_name^3", "store_items.item_description"],
+                                "type": "best_fields"
+                              }
                             }
                           }
                         }
-                      }
-                    ]
+                      ]
+                    }
                   }
-                }
-                """, keyword, keyword);
+                ],
+                "must_not": [
+                  {
+                    "term": {
+                      "_id": "%s"
+                    }
+                  }
+                ]
+              }
+            }
+            """, keyword, keyword, idToExclude);
+
         StringQuery query = new StringQuery(queryJson);
         SearchHits<EleBusiness> searchHits = esOps.search(query, EleBusiness.class);
         return searchHits.stream()

@@ -34,7 +34,9 @@ public class CaptchaController {
     @Autowired
     UserService userService;
 
-
+    ///////////////////////////////////////////////////
+    /// 获取图形验证码
+    ///////////////////////////////////////////////////
     @GetMapping("/captchaImg")
     public ResponseEntity<byte[]> getCaptchaImg() throws IOException {
         String imgCaptchaText = CaptchaUtil.generateRandomCaptchaText(CaptchaUtil.IMG_CAPTCHA_CHAR);
@@ -53,7 +55,9 @@ public class CaptchaController {
         return ResponseEntity.ok().headers(headers).body(imageBytes);
     }
 
-
+    ///////////////////////////////////////////////////
+    /// 获取邮箱验证码
+    ///////////////////////////////////////////////////
     @GetMapping("/captchaEmail")
     public ResponseEntity<Map<String, String>> getCaptchaEmail(@RequestParam String email) {
         Map<String, String> res = new HashMap<>();
