@@ -22,9 +22,9 @@ public class AmapController {
     @Autowired
     private ElasticsearchService elasticsearchService;
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 通过经纬度获取位置文本
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("/getFormattedAddress")
     public String getFormattedAddress(
             HttpServletRequest request,
@@ -48,16 +48,16 @@ public class AmapController {
 
         String userId = JwtUtil.getUserId(accessToken).toString();
         String address = amapService.getFormattedAddress(longitude, latitude);
-        if(address != null && !elasticsearchService.updateLocation(userId, longitude, latitude, address)) {
+        if (address != null && !elasticsearchService.updateLocation(userId, longitude, latitude, address)) {
             log.error("failed to update location by lon and lat, userId={}", userId);
         }
 
         return address;
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 通过位置文本获取经纬度
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("/getPosition")
     public Map<String, Double> getLocation(
             HttpServletRequest request,
@@ -88,4 +88,33 @@ public class AmapController {
         return res;
     }
 
+    /// ////////////////////////////////////////////////
+    /// 通过经纬度计算两地距离和送餐时间  1 ---> 2
+    /// ////////////////////////////////////////////////
+    @GetMapping("getDistance")
+    public Map<String, Double> getDistance(
+            HttpServletRequest request,
+            @RequestParam double longitude1,
+            @RequestParam double latitude1,
+            @RequestParam double longitude2,
+            @RequestParam double latitude2
+    ) {
+        if (latitude1 < -90 || latitude1 > 90 || longitude1 < -180 || longitude1 > 180
+                || latitude2 < -90 || latitude2 > 90 || longitude2 < -180 || longitude2 > 180) {
+            return null;
+        }
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return null;
+        }
+
+        return amapService.getDistance(longitude1, latitude1, longitude2, latitude2);
+    }
 }

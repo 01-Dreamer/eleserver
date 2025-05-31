@@ -77,7 +77,7 @@ public class AmapServiceImpl implements AmapService {
 
     @Override
     public Map<String, Double> getDistance(double longitude1, double latitude1, double longitude2, double latitude2) {
-        String urlTemplate = "https://restapi.amap.com/v3/direction/driving?origin=%f,%f&destination=%f,%f&output=json&key=" + amapkeySecret;
+        String urlTemplate = "https://restapi.amap.com/v4/direction/bicycling?origin=%f,%f&destination=%f,%f&key=" + amapkeySecret;
         String requestUrl = String.format(urlTemplate, longitude1, latitude1, longitude2, latitude2);
 
         RestTemplate restTemplate = new RestTemplate();
@@ -88,23 +88,26 @@ public class AmapServiceImpl implements AmapService {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(responseBody);
 
-            if (!"1".equals(rootNode.path("status").asText())) {
-                log.warn("amap API returned error: {}", rootNode.path("info").asText());
+            if (rootNode.path("errcode").asInt() != 0) {
+                log.warn("amap API returned error: {}", rootNode.path("errmsg").asText());
                 return null;
             }
 
-            JsonNode paths = rootNode.path("route").path("paths");
+            JsonNode paths = rootNode.path("data").path("paths");
             if (paths.isArray() && !paths.isEmpty()) {
                 JsonNode firstPath = paths.get(0);
                 double distance = firstPath.path("distance").asDouble();
                 double duration = firstPath.path("duration").asDouble();
                 return Map.of("distance", distance, "duration", duration);
+            } else {
+                log.warn("failed to find paths in amap response");
             }
         } catch (Exception e) {
-            log.warn("failed to get distance: {}", e.getMessage());
+            log.warn("failed to parse amap response: {}", e.getMessage(), e);
         }
 
         return null;
     }
+
 
 }

@@ -332,5 +332,49 @@ public class UserController {
         return elasticsearchService.getAllEleBusinessOrderById(userId);
     }
 
+    ///////////////////////////////////////////////////
+    /// 获取指定商家信息
+    ///////////////////////////////////////////////////
+    @GetMapping("getOneEleBusiness")
+    public EleBusiness getOneEleBusiness(
+            HttpServletRequest request,
+            @RequestParam String id
+    ) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return null;
+        }
+
+        return elasticsearchService.getEleBusinessById(id);
+    }
+
+    ///////////////////////////////////////////////////
+    /// 根据关键字查询商家
+    ///////////////////////////////////////////////////
+    @GetMapping("getEleBusinessByWord")
+    public List<EleBusiness> getEleBusinessByWord(
+            HttpServletRequest request,
+            @RequestParam String keyword
+    ) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return null;
+        }
+
+        String userId = JwtUtil.getUserId(accessToken).toString();
+        return elasticsearchService.getALLEleBusinessByKeyword(keyword,userId);
+    }
 
 }
