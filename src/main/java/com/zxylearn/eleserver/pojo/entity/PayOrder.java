@@ -19,7 +19,10 @@ public class PayOrder {
     private String orderId;
 
     @TableField(value = "userId")
-    private String userId;
+    private Integer userId;
+
+    @TableField(value = "businessId")
+    private Integer businessId;
 
     @TableField(value = "orderInfo")
     private String orderInfo;

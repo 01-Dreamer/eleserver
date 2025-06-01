@@ -15,9 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -30,14 +28,10 @@ public class UserController {
     ElasticsearchService elasticsearchService;
     @Autowired
     private ChatMessageService chatMessageService;
-    @Autowired
-    private PayOrderService payOrderService;
-    @Autowired
-    private JsonUtil jsonUtil;
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 获取聊天信息
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("/getChatMessage")
     public List<ChatMessage> getChatMessage(
             HttpServletRequest request,
@@ -64,9 +58,9 @@ public class UserController {
         }
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 获取用户头像
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("/getOtherAvatar")
     public String getOtherAvatar(
             HttpServletRequest request,
@@ -91,9 +85,9 @@ public class UserController {
         }
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 更新用户头像
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @PostMapping("/updateAvatar")
     public String updateAvatar(
             HttpServletRequest request,
@@ -124,9 +118,9 @@ public class UserController {
         return newAvatar;
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 更新商店封面
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @PostMapping("updateStoreCover")
     public String updateStoreCover(
             HttpServletRequest request,
@@ -162,9 +156,9 @@ public class UserController {
         return newStoreCover;
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 更新商店信息
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @PostMapping("updateStoreText")
     public boolean updateStoreText(
             HttpServletRequest request,
@@ -186,9 +180,9 @@ public class UserController {
         return elasticsearchService.updateStoreText(userId, storeName, storeDescription);
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 增加商店销量
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @PostMapping("addStoreVolume")
     public boolean addStoreVolume(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
@@ -206,9 +200,9 @@ public class UserController {
         return elasticsearchService.addStoreVolume(userId);
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 增加商品
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @PostMapping("addStoreItem")
     public Integer addStoreItem(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
@@ -226,9 +220,9 @@ public class UserController {
         return elasticsearchService.addStoreItem(userId);
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 删除商品
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @DeleteMapping("delStoreItem")
     public boolean delStoreItem(
             HttpServletRequest request,
@@ -251,12 +245,12 @@ public class UserController {
         if (oldItemCover != null && !ossService.deleteFile(oldItemCover)) {
             log.warn("failed to delete old item cover: {}", oldItemCover);
         }
-        return elasticsearchService.delStoreItem(userId,itemId);
+        return elasticsearchService.delStoreItem(userId, itemId);
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 更新商品封面
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @PostMapping("updateStoreItemCover")
     public String updateStoreItemCover(
             HttpServletRequest request,
@@ -288,9 +282,9 @@ public class UserController {
         return newItemCover;
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 更新商品信息
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @PostMapping("updateStoreItemText")
     public boolean updateStoreItemText(
             HttpServletRequest request,
@@ -314,9 +308,9 @@ public class UserController {
         return elasticsearchService.updateStoreItemText(userId, itemId, itemName, itemDescription, itemPrice);
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 获取所有商家信息（不包括StoreItems）
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("getAllEleBusiness")
     public List<EleBusiness> getAllEleBusiness(
             HttpServletRequest request
@@ -336,9 +330,9 @@ public class UserController {
         return elasticsearchService.getAllEleBusinessOrderById(userId);
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 获取指定商家信息
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("getOneEleBusiness")
     public EleBusiness getOneEleBusiness(
             HttpServletRequest request,
@@ -358,9 +352,9 @@ public class UserController {
         return elasticsearchService.getEleBusinessById(id);
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 获取我的店铺销量
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("getMyStoreVolume")
     public Integer getMyStoreVolume(
             HttpServletRequest request
@@ -382,9 +376,9 @@ public class UserController {
         return eleBusiness == null ? 0 : eleBusiness.getStoreVolume();
     }
 
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     /// 根据关键字查询商家
-    ///////////////////////////////////////////////////
+    /// ////////////////////////////////////////////////
     @GetMapping("getEleBusinessByWord")
     public List<EleBusiness> getEleBusinessByWord(
             HttpServletRequest request,
@@ -402,75 +396,7 @@ public class UserController {
         }
 
         String userId = JwtUtil.getUserId(accessToken).toString();
-        return elasticsearchService.getALLEleBusinessByKeyword(keyword,userId);
-    }
-
-    ///////////////////////////////////////////////////
-    /// 创建订单
-    ///////////////////////////////////////////////////
-    @PostMapping("createOrder")
-    public String createOrder(
-            HttpServletRequest request,
-            @RequestParam String id,
-            @RequestBody Map<String, Integer> orderJson
-    ) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return null;
-        }
-
-        // 检查短期Jwt令牌的合法性
-        String accessToken = authHeader.substring(7);
-        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
-            return null;
-        }
-
-        EleBusiness eleBusiness = elasticsearchService.getEleBusinessById(id);
-        if(eleBusiness == null){
-            return null;
-        }
-
-        // 计算价格创建JSON格式的订单
-        Map<String, BigDecimal> items = new HashMap<>();
-        BigDecimal totalPrice = new BigDecimal("3.00");
-        for (EleBusiness.StoreItem storeItem : eleBusiness.getStoreItems()) {
-            String itemId = storeItem.getItemId().toString();
-            String itemName = storeItem.getItemName();
-            Float priceFloat = storeItem.getItemPrice();
-
-            if (priceFloat == null) continue;
-            BigDecimal price = new BigDecimal(priceFloat.toString());
-
-            if (orderJson.containsKey(itemId)) {
-                Integer count = orderJson.get(itemId);
-                if (count != null && count > 0) {
-                    BigDecimal cnt = new BigDecimal(count.toString());
-                    BigDecimal sum = price.multiply(cnt);
-                    totalPrice = totalPrice.add(sum);
-
-                    String name = itemName + " x " + count + "@" + itemId;
-                    items.put(name, sum.setScale(2, RoundingMode.HALF_UP));
-                }
-            }
-        }
-
-        Map<String,String> res = new HashMap<>();
-        res.put("storeName", eleBusiness.getStoreName());
-        res.put("totalPrice", totalPrice.setScale(2, RoundingMode.HALF_UP).toString());
-        res.put("items", jsonUtil.toJson(items));
-
-        String orderInfo = jsonUtil.toJson(res);
-
-        PayOrder payOrder = new PayOrder();
-        payOrder.setUserId(JwtUtil.getUserId(accessToken).toString());
-        payOrder.setOrderInfo(orderInfo);
-        payOrder.setPay(false);
-        if(!payOrderService.addPayOrder(payOrder)){
-            log.warn("failed to add payOrder: {}", orderInfo);
-            return null;
-        }
-
-        return orderInfo;
+        return elasticsearchService.getALLEleBusinessByKeyword(keyword, userId);
     }
 
 }
