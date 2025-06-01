@@ -1,20 +1,20 @@
 package com.zxylearn.eleserver.controller;
 
-import com.zxylearn.eleserver.pojo.ChatMessage;
-import com.zxylearn.eleserver.pojo.EleBusiness;
-import com.zxylearn.eleserver.service.ChatMessageService;
-import com.zxylearn.eleserver.service.ElasticsearchService;
-import com.zxylearn.eleserver.service.OssService;
-import com.zxylearn.eleserver.service.UserService;
+import com.zxylearn.eleserver.pojo.entity.ChatMessage;
+import com.zxylearn.eleserver.pojo.entity.EleBusiness;
+import com.zxylearn.eleserver.pojo.entity.PayOrder;
+import com.zxylearn.eleserver.service.*;
+import com.zxylearn.eleserver.utils.JsonUtil;
 import com.zxylearn.eleserver.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +30,10 @@ public class UserController {
     ElasticsearchService elasticsearchService;
     @Autowired
     private ChatMessageService chatMessageService;
+    @Autowired
+    private PayOrderService payOrderService;
+    @Autowired
+    private JsonUtil jsonUtil;
 
     ///////////////////////////////////////////////////
     /// 获取聊天信息
@@ -285,7 +289,7 @@ public class UserController {
     }
 
     ///////////////////////////////////////////////////
-    /// 增加商品信息
+    /// 更新商品信息
     ///////////////////////////////////////////////////
     @PostMapping("updateStoreItemText")
     public boolean updateStoreItemText(
@@ -311,7 +315,7 @@ public class UserController {
     }
 
     ///////////////////////////////////////////////////
-    /// 获取所有商家信息
+    /// 获取所有商家信息（不包括StoreItems）
     ///////////////////////////////////////////////////
     @GetMapping("getAllEleBusiness")
     public List<EleBusiness> getAllEleBusiness(
@@ -355,6 +359,30 @@ public class UserController {
     }
 
     ///////////////////////////////////////////////////
+    /// 获取我的店铺销量
+    ///////////////////////////////////////////////////
+    @GetMapping("getMyStoreVolume")
+    public Integer getMyStoreVolume(
+            HttpServletRequest request
+    ) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return null;
+        }
+
+        String userId = JwtUtil.getUserId(accessToken).toString();
+
+        EleBusiness eleBusiness = elasticsearchService.getEleBusinessById(userId);
+        return eleBusiness == null ? 0 : eleBusiness.getStoreVolume();
+    }
+
+    ///////////////////////////////////////////////////
     /// 根据关键字查询商家
     ///////////////////////////////////////////////////
     @GetMapping("getEleBusinessByWord")
@@ -375,6 +403,74 @@ public class UserController {
 
         String userId = JwtUtil.getUserId(accessToken).toString();
         return elasticsearchService.getALLEleBusinessByKeyword(keyword,userId);
+    }
+
+    ///////////////////////////////////////////////////
+    /// 创建订单
+    ///////////////////////////////////////////////////
+    @PostMapping("createOrder")
+    public String createOrder(
+            HttpServletRequest request,
+            @RequestParam String id,
+            @RequestBody Map<String, Integer> orderJson
+    ) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return null;
+        }
+
+        EleBusiness eleBusiness = elasticsearchService.getEleBusinessById(id);
+        if(eleBusiness == null){
+            return null;
+        }
+
+        // 计算价格创建JSON格式的订单
+        Map<String, BigDecimal> items = new HashMap<>();
+        BigDecimal totalPrice = new BigDecimal("3.00");
+        for (EleBusiness.StoreItem storeItem : eleBusiness.getStoreItems()) {
+            String itemId = storeItem.getItemId().toString();
+            String itemName = storeItem.getItemName();
+            Float priceFloat = storeItem.getItemPrice();
+
+            if (priceFloat == null) continue;
+            BigDecimal price = new BigDecimal(priceFloat.toString());
+
+            if (orderJson.containsKey(itemId)) {
+                Integer count = orderJson.get(itemId);
+                if (count != null && count > 0) {
+                    BigDecimal cnt = new BigDecimal(count.toString());
+                    BigDecimal sum = price.multiply(cnt);
+                    totalPrice = totalPrice.add(sum);
+
+                    String name = itemName + " x " + count + "@" + itemId;
+                    items.put(name, sum.setScale(2, RoundingMode.HALF_UP));
+                }
+            }
+        }
+
+        Map<String,String> res = new HashMap<>();
+        res.put("storeName", eleBusiness.getStoreName());
+        res.put("totalPrice", totalPrice.setScale(2, RoundingMode.HALF_UP).toString());
+        res.put("items", jsonUtil.toJson(items));
+
+        String orderInfo = jsonUtil.toJson(res);
+
+        PayOrder payOrder = new PayOrder();
+        payOrder.setUserId(JwtUtil.getUserId(accessToken).toString());
+        payOrder.setOrderInfo(orderInfo);
+        payOrder.setPay(false);
+        if(!payOrderService.addPayOrder(payOrder)){
+            log.warn("failed to add payOrder: {}", orderInfo);
+            return null;
+        }
+
+        return orderInfo;
     }
 
 }

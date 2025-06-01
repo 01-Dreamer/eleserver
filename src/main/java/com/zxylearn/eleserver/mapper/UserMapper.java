@@ -2,7 +2,7 @@ package com.zxylearn.eleserver.mapper;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.pojo.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

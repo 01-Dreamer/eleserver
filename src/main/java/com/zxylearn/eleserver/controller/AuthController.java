@@ -2,10 +2,10 @@ package com.zxylearn.eleserver.controller;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.zxylearn.eleserver.pojo.EleBusiness;
-import com.zxylearn.eleserver.pojo.LoginRequest;
-import com.zxylearn.eleserver.pojo.RegisterRequest;
-import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.pojo.entity.EleBusiness;
+import com.zxylearn.eleserver.pojo.DTO.LoginRequest;
+import com.zxylearn.eleserver.pojo.DTO.RegisterRequest;
+import com.zxylearn.eleserver.pojo.entity.User;
 import com.zxylearn.eleserver.service.ElasticsearchService;
 import com.zxylearn.eleserver.service.UserService;
 import com.zxylearn.eleserver.utils.JwtUtil;
@@ -14,7 +14,6 @@ import com.zxylearn.eleserver.utils.RedisUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.cache.CacheProperties;
 import org.springframework.data.geo.Point;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

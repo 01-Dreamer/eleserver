@@ -1,10 +1,12 @@
 package com.zxylearn.eleserver.utils;
 
+import org.springframework.stereotype.Component;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
-
+@Component
 public class CaptchaUtil {
 
     private static final int WIDTH = 120;

@@ -1,17 +1,14 @@
 package com.zxylearn.eleserver.service.Impl;
 
 
-import com.zxylearn.eleserver.pojo.EleBusiness;
+import com.zxylearn.eleserver.pojo.entity.EleBusiness;
 import com.zxylearn.eleserver.service.ElasticsearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.Criteria;
-import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
-import org.springframework.data.elasticsearch.core.query.Query;
-import org.springframework.data.elasticsearch.core.query.StringQuery;
+import org.springframework.data.elasticsearch.core.query.*;
 import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
 
@@ -197,6 +194,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         Criteria criteria = new Criteria("_id").not().is(idToExclude);
         Query query = new CriteriaQuery(criteria)
                 .addSort(Sort.by("_id").ascending());
+        query.addSourceFilter(new FetchSourceFilter(null, new String[]{"store_items"}));
         SearchHits<EleBusiness> searchHits = esOps.search(query, EleBusiness.class);
         return searchHits.stream()
                 .map(SearchHit::getContent)

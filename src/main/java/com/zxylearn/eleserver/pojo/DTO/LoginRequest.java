@@ -1,5 +1,4 @@
-package com.zxylearn.eleserver.pojo;
-
+package com.zxylearn.eleserver.pojo.DTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterRequest {
+public class LoginRequest {
     private String email;
     private String password;
-    private String captchaEmailId;
-    private String captchaEmailText;
+    private String captchaImgId;
+    private String captchaImgText;
 }

@@ -2,7 +2,7 @@ package com.zxylearn.eleserver.controller;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.pojo.entity.User;
 import com.zxylearn.eleserver.service.UserService;
 import com.zxylearn.eleserver.utils.CaptchaUtil;
 import com.zxylearn.eleserver.utils.EmailUtil;

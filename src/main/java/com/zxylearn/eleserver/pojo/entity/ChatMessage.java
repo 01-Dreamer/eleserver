@@ -1,4 +1,4 @@
-package com.zxylearn.eleserver.pojo;
+package com.zxylearn.eleserver.pojo.entity;
 
 
 import com.baomidou.mybatisplus.annotation.IdType;

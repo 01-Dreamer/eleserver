@@ -1,6 +1,6 @@
 package com.zxylearn.eleserver.service;
 
-import com.zxylearn.eleserver.pojo.EleBusiness;
+import com.zxylearn.eleserver.pojo.entity.EleBusiness;
 
 import java.util.List;
 

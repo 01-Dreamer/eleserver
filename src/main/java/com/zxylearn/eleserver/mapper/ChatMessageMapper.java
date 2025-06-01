@@ -1,7 +1,7 @@
 package com.zxylearn.eleserver.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.zxylearn.eleserver.pojo.ChatMessage;
+import com.zxylearn.eleserver.pojo.entity.ChatMessage;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

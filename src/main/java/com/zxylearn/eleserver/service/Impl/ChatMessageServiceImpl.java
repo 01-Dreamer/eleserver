@@ -3,7 +3,7 @@ package com.zxylearn.eleserver.service.Impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zxylearn.eleserver.mapper.ChatMessageMapper;
-import com.zxylearn.eleserver.pojo.ChatMessage;
+import com.zxylearn.eleserver.pojo.entity.ChatMessage;
 import com.zxylearn.eleserver.service.ChatMessageService;
 import org.springframework.stereotype.Service;
 

@@ -1,6 +1,7 @@
 package com.zxylearn.eleserver.utils;
 
 import io.jsonwebtoken.*;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -8,6 +9,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.UUID;
 
+@Component
 public class JwtUtil {
 
     private static final String SECRET =

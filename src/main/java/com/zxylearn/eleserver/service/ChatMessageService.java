@@ -1,7 +1,7 @@
 package com.zxylearn.eleserver.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.zxylearn.eleserver.pojo.ChatMessage;
+import com.zxylearn.eleserver.pojo.entity.ChatMessage;
 
 import java.util.List;
 

@@ -3,7 +3,7 @@ package com.zxylearn.eleserver.service.Impl;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.zxylearn.eleserver.mapper.UserMapper;
-import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.pojo.entity.User;
 import com.zxylearn.eleserver.service.UserService;
 import org.springframework.stereotype.Service;
 
@@ -32,16 +32,6 @@ public class UserServiceImpl
         updateWrapper.set("avatar", avatar);
 
         return baseMapper.update(null, updateWrapper) > 0;
-    }
-
-    @Override
-    public boolean existsById(Integer userId) {
-        if(userId == null) {
-            return false;
-        }
-        UpdateWrapper<User> existsWrapper = new UpdateWrapper<>();
-        existsWrapper.eq("userId", userId);
-        return baseMapper.exists(existsWrapper);
     }
 
     @Override

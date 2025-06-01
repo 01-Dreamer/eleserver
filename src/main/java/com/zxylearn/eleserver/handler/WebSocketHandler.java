@@ -1,8 +1,7 @@
 package com.zxylearn.eleserver.handler;
 
 
-import com.zxylearn.eleserver.pojo.ChatMessage;
-import com.zxylearn.eleserver.pojo.User;
+import com.zxylearn.eleserver.pojo.entity.ChatMessage;
 import com.zxylearn.eleserver.service.ChatMessageService;
 import com.zxylearn.eleserver.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -22,14 +21,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class WebSocketHandler extends TextWebSocketHandler {
 
-    private final UserService userService;
     private final ChatMessageService chatMessageService;
     private final Map<Integer, WebSocketSession> sessions;
 
-    public WebSocketHandler(UserService userService,
-                            ChatMessageService chatMessageService
-    ) {
-        this.userService = userService;
+    public WebSocketHandler(ChatMessageService chatMessageService) {
         this.chatMessageService = chatMessageService;
         this.sessions = new ConcurrentHashMap<>();
     }
@@ -55,15 +50,10 @@ public class WebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        Integer receiverId = chatMessage.getReceiverId();
-        if (!userService.existsById(receiverId)) {
-            log.warn("failed to find receiver, receiverId={}", receiverId);
-            return;
-        }
-
         chatMessage.setCreateTime(LocalDateTime.now());
         if (!chatMessageService.addChatMessage(chatMessage)) {
-            log.error("failed to add chat message: {}", chatMessage);
+            log.error("failed to add chat message: {}, receiverId: {}", chatMessage, chatMessage.getReceiverId());
+            return;
         }
 
         String messageJson = convertChatMessageToJson(chatMessage);
