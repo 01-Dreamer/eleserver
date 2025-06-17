@@ -3,7 +3,6 @@ package com.zxylearn.eleserver.handler;
 
 import com.zxylearn.eleserver.pojo.entity.ChatMessage;
 import com.zxylearn.eleserver.service.ChatMessageService;
-import com.zxylearn.eleserver.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;

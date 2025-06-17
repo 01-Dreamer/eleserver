@@ -215,7 +215,7 @@ public class AuthController {
         //***********************************************
         //***********************************************
         //***********************************************
-        // TODO 仅用于测试阶段，记得修改
+        // TODO 仅用于测试阶段
         //***********************************************
         //***********************************************
         //***********************************************
@@ -253,7 +253,7 @@ public class AuthController {
         if (userService.addUser(user)) {
             res.put("success", "success to register");
 
-            if (!elasticsearchService.createDoc(user.getUserId().toString())) {
+            if (!elasticsearchService.createDoc(user.getUserId().toString(), email)) {
                 log.error("failed to create doc, userId={}", user.getUserId());
             }
 

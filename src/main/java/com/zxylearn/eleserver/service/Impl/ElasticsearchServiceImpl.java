@@ -24,17 +24,19 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     private ElasticsearchOperations esOps;
 
     @Override
-    public boolean createDoc(String id) {
+    public boolean createDoc(String id, String email) {
         if (esOps.exists(id, EleBusiness.class)) {
             return false;
         }
         EleBusiness eleBusiness = new EleBusiness();
         eleBusiness.setId(id);
-        eleBusiness.setStoreName("商家" + id);
-        eleBusiness.setStoreDescription("我是商家" + id);
+        eleBusiness.setStoreName(email + "的店铺");
+        eleBusiness.setStoreDescription("商家还没有描述哦");
         eleBusiness.setLocationText("云南大学呈贡校区软件学院");
         eleBusiness.setLocation(new Point(102.850549, 24.826936));
         eleBusiness.setStoreVolume(0);
+        eleBusiness.setStoreReviewCount(0);
+        eleBusiness.setStoreReview(0.0F);
         eleBusiness.setItemIndex(0);
         eleBusiness.setStoreItems(new ArrayList<>());
         esOps.save(eleBusiness);
@@ -72,6 +74,20 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         }
         Integer newStoreVolume = eleBusiness.getStoreVolume() + 1;
         eleBusiness.setStoreVolume(newStoreVolume);
+        esOps.save(eleBusiness);
+        return true;
+    }
+
+    @Override
+    public boolean updateStoreReview(String id, Float review) {
+        EleBusiness eleBusiness = esOps.get(id, EleBusiness.class);
+        if (eleBusiness == null) {
+            return false;
+        }
+        Integer storeReviewCount = eleBusiness.getStoreReviewCount();
+        Float newStoreReview = (float) ((eleBusiness.getStoreReview()*(float)storeReviewCount + review) / ((float)storeReviewCount + 1.0));
+        eleBusiness.setStoreReviewCount(storeReviewCount + 1);
+        eleBusiness.setStoreReview(newStoreReview);
         esOps.save(eleBusiness);
         return true;
     }
@@ -191,9 +207,9 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
     @Override
     public List<EleBusiness> getAllEleBusinessOrderById(String idToExclude) {
-        Criteria criteria = new Criteria("_id").not().is(idToExclude);
+        Criteria criteria = new Criteria("id").not().is(idToExclude);
         Query query = new CriteriaQuery(criteria)
-                .addSort(Sort.by("_id").ascending());
+                .addSort(Sort.by("id").ascending());
         query.addSourceFilter(new FetchSourceFilter(null, new String[]{"store_items"}));
         SearchHits<EleBusiness> searchHits = esOps.search(query, EleBusiness.class);
         return searchHits.stream()

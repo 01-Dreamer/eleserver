@@ -152,4 +152,38 @@ public class OrderController {
         return false;
     }
 
+    /// ////////////////////////////////////////////////
+    /// 提交评价
+    /// ////////////////////////////////////////////////
+    @PostMapping("submitReview")
+    public boolean submitReview(
+            HttpServletRequest request,
+            @RequestParam String orderId,
+            @RequestParam Integer review
+    ) {
+        // 检查评价是否合法
+        if(review < 0 || review > 10) {
+            return false;
+        }
+
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return false;
+        }
+
+        // 检查短期Jwt令牌的合法性
+        String accessToken = authHeader.substring(7);
+        if (!JwtUtil.verifyToken(accessToken) || !JwtUtil.getType(accessToken).equals(JwtUtil.ACCESS)) {
+            return false;
+        }
+
+        Integer userId = JwtUtil.getUserId(accessToken);
+        Integer businessId = payOrderService.submitReview(userId, orderId, review);
+        if (businessId != null) {
+            elasticsearchService.updateStoreReview(businessId.toString(), (float) (review / 2.0));
+            return true;
+        }
+
+        return false;
+    }
 }

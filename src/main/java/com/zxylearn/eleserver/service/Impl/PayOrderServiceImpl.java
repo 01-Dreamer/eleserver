@@ -47,4 +47,20 @@ public class PayOrderServiceImpl
         }
         return null;
     }
+
+    @Override
+    public Integer submitReview(Integer userId, String orderId, Integer review) {
+        PayOrder payOrder = baseMapper.selectOne(new QueryWrapper<PayOrder>()
+                .eq("orderId", orderId));
+
+        if (payOrder == null || !payOrder.isPay() || !payOrder.getUserId().equals(userId)) {
+            return null;
+        }
+
+        payOrder.setReview(review);
+        if (baseMapper.updateById(payOrder) > 0) {
+            return payOrder.getBusinessId();
+        }
+        return null;
+    }
 }

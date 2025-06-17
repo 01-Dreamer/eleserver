@@ -19,6 +19,7 @@ import java.util.List;
 public class EleBusiness {
 
     @Id
+    @Field(type = FieldType.Keyword)
     private String id;
 
     @Field(name = "store_name")
@@ -41,6 +42,12 @@ public class EleBusiness {
 
     @Field(name = "store_volume")
     private Integer storeVolume;
+
+    @Field(name = "store_review_count")
+    private Integer storeReviewCount;
+
+    @Field(name = "store_review")
+    private Float storeReview;
 
     @Field(name = "item_index")
     private Integer itemIndex;

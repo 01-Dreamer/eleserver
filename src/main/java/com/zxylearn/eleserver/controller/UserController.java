@@ -2,9 +2,7 @@ package com.zxylearn.eleserver.controller;
 
 import com.zxylearn.eleserver.pojo.entity.ChatMessage;
 import com.zxylearn.eleserver.pojo.entity.EleBusiness;
-import com.zxylearn.eleserver.pojo.entity.PayOrder;
 import com.zxylearn.eleserver.service.*;
-import com.zxylearn.eleserver.utils.JsonUtil;
 import com.zxylearn.eleserver.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -12,9 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 
 @Slf4j
@@ -353,10 +348,10 @@ public class UserController {
     }
 
     /// ////////////////////////////////////////////////
-    /// 获取我的店铺销量
+    /// 获取我的店铺销量、评价
     /// ////////////////////////////////////////////////
-    @GetMapping("getMyStoreVolume")
-    public Integer getMyStoreVolume(
+    @GetMapping("getMyStoreVolumeReview")
+    public Map<String,String> getMyStoreVolume(
             HttpServletRequest request
     ) {
         String authHeader = request.getHeader("Authorization");
@@ -371,9 +366,16 @@ public class UserController {
         }
 
         String userId = JwtUtil.getUserId(accessToken).toString();
-
         EleBusiness eleBusiness = elasticsearchService.getEleBusinessById(userId);
-        return eleBusiness == null ? 0 : eleBusiness.getStoreVolume();
+        if(eleBusiness == null){
+            return null;
+        }
+
+        Map<String,String> res = new HashMap<>();
+        res.put("storeVolume",eleBusiness.getStoreVolume().toString());
+        res.put("storeReview",eleBusiness.getStoreReview().toString());
+
+        return res;
     }
 
     /// ////////////////////////////////////////////////

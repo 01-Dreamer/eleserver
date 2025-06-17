@@ -9,4 +9,5 @@ public interface PayOrderService extends IService<PayOrder> {
     boolean addPayOrder(PayOrder payOrder);
     List<PayOrder> getPayOrderByUserId(Integer userId);
     Integer submitPayOrder(Integer userId, String orderId);
+    Integer submitReview(Integer userId, String orderId, Integer review);
 }

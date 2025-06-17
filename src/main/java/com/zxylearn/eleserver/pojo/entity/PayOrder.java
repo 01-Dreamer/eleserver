@@ -32,4 +32,7 @@ public class PayOrder {
 
     @TableField(value = "isPay")
     private boolean isPay;
+
+    @TableField(value = "review")
+    private Integer review;
 }
